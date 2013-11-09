@@ -10,4 +10,13 @@ class Album < ActiveRecord::Base
   def owner? user
     user.id == self.user_id
   end
+
+  def find_by_position position
+    photos.find_by(:'albums_photos.position' => position)
+  end
+
+  def position photo
+    found = albums_photos.find { |p| p.photo_id == photo.id }
+    found.nil? ? nil : found.position
+  end
 end

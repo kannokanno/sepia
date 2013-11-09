@@ -20,7 +20,7 @@ class AlbumsController < ApplicationController
     @photos = @album.photos
                       .page(params[:page] || 1)
                       .per(Settings.photos.per_page)
-                      .order('posted_at DESC')
+                      .order('position')
     @all_count = @album.photos.size
     render layout: "public" unless @album.owner? current_user
   end

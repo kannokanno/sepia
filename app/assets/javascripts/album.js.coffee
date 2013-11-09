@@ -11,11 +11,19 @@ class Album
   delete: =>
     $.ajax(type: 'DELETE', url: "/albums/#{@id}.json", dataType: 'json')
 
-  add_photos: (photoIds) =>
+  add_photo: (photoId, position) =>
     $.ajax
       type: 'POST',
       url: "/albums/#{@id}/photos.json",
-      data: {photo_ids: photoIds}
+      data: {photo_id: photoId, position: position}
+      dataType: 'json'
+      timeout: 10000,
+
+  update_photo: (photoId, position) =>
+    $.ajax
+      type: 'PUT',
+      url: "/albums/#{@id}/photos.json",
+      data: {photo_id: photoId, position: position}
       dataType: 'json'
       timeout: 10000,
 

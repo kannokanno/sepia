@@ -1,7 +1,7 @@
 if !@photo
   response.status = 400
   json.result :failed
-  json.message 'invalid @photo id'
+  json.message 'invalid photo id'
 elsif @error
   response.status = 400
   json.result :failed
@@ -13,5 +13,3 @@ else
   json.fullsize_url @photo.fullsize_url
   json.message @photo.message
 end
-
-json.album_id params[:album_id]

@@ -17,7 +17,7 @@ describe Album do
     describe 'photos' do
       subject{ album.photos }
       before do
-        AlbumsPhotos.create(album_id: album.id, photo_id: photo.id)
+        AlbumsPhotos.create(album_id: album.id, photo_id: photo.id, position: 1)
       end
       it "紐づくPhotoが取得できる" do
         expect(subject.first).to eq(photo)
@@ -43,14 +43,16 @@ describe Album do
   describe "validation" do
     describe "add photos" do
       context "AlbumのユーザーとPhotoのユーザーが同じ場合" do
+        before do
+          AlbumsPhotos.create(album_id: album.id, photo_id: photo.id, position: 1)
+        end
         it "Albumに紐づくPhotoとして登録される" do
-          expect(album.photos << photo).to eq([photo])
           expect(Album.find(album.id).photos.first).to eq(photo)
         end
       end
       context "AlbumのユーザーとPhotoのユーザーが別の場合" do
         it "Albumに紐づくPhotoとして登録されない" do
-          expect{ album.photos << other_photo }.to raise_error{|error|
+          expect{ AlbumsPhotos.create!(album_id: album.id, photo_id: other_photo.id, position: 1) }.to raise_error{|error|
             expect(error.record.errors[:user]).to have(1).item
           }
           expect(Album.find(album.id).photos.first).to be_nil
@@ -58,10 +60,10 @@ describe Album do
       end
       context "登録済みの写真の場合" do
         before do
-          album.photos << photo
+          AlbumsPhotos.create(album_id: album.id, photo_id: photo.id, position: 1)
         end
         it "Albumに紐づくPhotoとして登録されない" do
-          expect{ album.photos << photo }.to raise_error{|error|
+          expect{ AlbumsPhotos.create!(album_id: album.id, photo_id: photo.id, position: 2) }.to raise_error{|error|
             expect(error.record.errors[:photo_id]).to match_array ['unique']
           }
           expect(Album.find(album.id).photos.size).to eq(1)
@@ -95,6 +97,36 @@ describe Album do
     context "受け取ったUserのIDがアルバムのUserIDと一致しない場合" do 
       before { @user = user2 }
       it { should be_false }
+    end
+  end
+
+  describe "#find_by_position" do
+    subject{ album.find_by_position(@position) }
+    before do
+      AlbumsPhotos.create(album_id: album.id, photo_id: photo.id, position: 1)
+    end
+    context "指定した位置に画像がある場合" do
+      before { @position = 1 }
+      it { should eq(photo) }
+    end
+    context "指定した位置に画像がない場合" do
+      before { @position = 2 }
+      it { should be_nil }
+    end
+  end
+
+  describe "#position" do
+    subject{ album.position(@photo) }
+    before do
+      AlbumsPhotos.create(album_id: album.id, photo_id: photo.id, position: 2)
+    end
+    context "指定した画像が登録されている場合" do
+      before { @photo = photo }
+      it { should eq(2) }
+    end
+    context "指定した画像が登録されていない場合" do
+      before { @photo = other_photo }
+      it { should be_nil }
     end
   end
 end

@@ -1,8 +1,16 @@
+galleryId = '#gallery'
 formId = '#new_album'
 submitButtonId = '#create-submit'
 modalId = '#create-form'
 messageTemplateId = "#error-msg-template"
 errorAreaId = "#errors"
+
+$(galleryId).booklet(
+  width: 1100,
+  height: 460,
+  speed: 500,
+  autoCenter: true,
+)
 
 $(submitButtonId).bind 'click', (event) ->
   event.preventDefault()
@@ -40,28 +48,31 @@ $(formId).submit (event) ->
 
   undefined
 
-apply_delete = ($link, $promise) ->
-  $link.css('display', 'none')
-  $promise
-  .done (data) ->
-    $link.closest('li').animate width: 'hide', height: 'hide', opacity: 'hide', 'slow', -> $(this).remove()
-  .fail (res) ->
-    # TODO エラー時の見せ方
-    console.log(res.responseJSON)
-    $link.css('display', '')
-
 do ->
-  $('#photos').on 'click', '.photo-trash', ->
+  $(galleryId).on 'click', '.photo-trash', ->
     if confirm('Is this photo deleted from an album?')
       $link = $(this)
       # TODO 複数削除を考慮して名前を`ids`にしてあるけど、今の持ち方だと自身のidしか持てないんじゃね。HTML側修正
-      apply_delete($link, new Album($link.data('album-id')).delete_photos($link.data('photo-ids')))
+      new Album($link.data('album-id')).delete_photos($link.data('photo-ids'))
+      .done (data) ->
+        $link.parent('.pocket').animate(opacity: 0, 'slow', ->
+          $(this).removeClass('pocket').addClass('add-pocket empty-pocket').html('<span>Add Photo</span>').css('opacity', '1.0'))
+      .fail (res) ->
+        # TODO エラー時の見せ方
+        console.log(res.responseJSON)
 
 do ->
   $('#albums').on 'click', '.album-trash', ->
     if confirm('Is this album deleted?')
       $link = $(this)
-      apply_delete($link, new Album($link.data('album-id')).delete())
+      $link.css('display', 'none')
+      new Album($link.data('album-id')).delete()
+      .done (data) ->
+        $link.closest('li').animate width: 'hide', height: 'hide', opacity: 'hide', 'slow', -> $(this).remove()
+      .fail (res) ->
+        # TODO エラー時の見せ方
+        console.log(res.responseJSON)
+        $link.css('display', '')
 
 apply_unveil = (page) -> $(".img-block img[data-page='#{page}']").unveil(0)
 apply_unveil(1)
@@ -121,13 +132,14 @@ $('#load-candidate-link').on 'click', ->
     # TODO '50'のベタ書き。photos.coffeeにもあるが、Settingsを参照したい
     $link.hide() if data.page * 50 >= data.all_count
 
+SepiaUtil.apply_fancybox($('.fullsize-link'))
+
 do ->
   init = true
-  $('#toggle-candidate').on 'click', ->
+  $('.gallery-page').on 'click', '.add-pocket', ->
     $candidate = $('#add-candidate')
     isClosed = $candidate.css('display') == 'none'
     iconBottomPos = if isClosed then '110px' else '5px'
-    $(this).animate(bottom: iconBottomPos, 500, 'swing')
 
     $candidate.animate(height: 'toggle', 500, 'swing', ->
       $icon = $('#toggle-candidate-icon')
@@ -151,35 +163,55 @@ do ->
   , ->
     $icon.removeClass(hoverClass)
 
+toast_success = (msg) ->
+  $.toast(msg, duration: 3000, type: 'success')
+
+toast_fail = (msg) ->
+  $.toast(msg, duration: 5000, type: 'danger')
+
 do ->
   mimeType = 'text/plain'
   dragImgCssClass = 'drag-img-active'
   dropCssClass = 'drop-area-notice'
-  $dragArea = $('#add-candidate')
-  $dropArea = $('#photos')
 
+  $dragArea = $('#add-candidate')
   $dragArea.on 'dragstart', 'img', (event) ->
     $(this).addClass(dragImgCssClass)
-    $dropArea.addClass(dropCssClass)
+    event.originalEvent.dataTransfer.effectAllowed = 'copy'
     event.originalEvent.dataTransfer.setData(mimeType, $(this).data('photo-id'))
+  $dragArea.on 'dragend', 'img', -> $(this).removeClass(dragImgCssClass)
 
-  $dragArea.on 'dragend', 'img', (event) ->
-    $(this).removeClass(dragImgCssClass)
-    $dropArea.removeClass(dropCssClass)
-
-  $dropArea.on 'dragover', (event) ->
-    event.preventDefault()
-
+  $dropArea = $("#{galleryId} .drop-area")
+  $dropArea.on 'dragenter', -> $(this).addClass(dropCssClass)
+  $dropArea.on 'dragleave', -> $(this).removeClass(dropCssClass)
+  $dropArea.on 'dragover', (event) -> event.preventDefault()
   $dropArea.on 'drop', (event) ->
-    new Album($(this).data('album-id'))
-    .add_photos([event.originalEvent.dataTransfer.getData(mimeType)])
-    .done (data) ->
-      $.toast('Photo was added.', duration: 3000, type: 'success')
-    .fail (res) ->
-      $.toast('Photo was not able to add.', duration: 5000, type: 'danger')
-    .always ->
-      $($dragArea, 'img').removeClass(dragImgCssClass)
-      $(this).removeClass(dropCssClass)
+    $photo = $(this)
+    album = new Album($(galleryId).data('album-id'))
+
+    apply_drop = ($promise, success_msg, fail_msg) ->
+      $promise
+      .done (data) ->
+        toast_success(success_msg)
+        $photo.removeClass('add-pocket empty-pocket').addClass('pocket')
+        template = _.template($('#pocket-template').html())
+        $photo.html(template(album_id: album.id, thumbnail_url: data.thumbnail_url, fullsize_url: data.fullsize_url, message: data.message, photo_id: [data.id]))
+        $($photo).find('img').unveil()
+        SepiaUtil.apply_fancybox($photo.find('.fullsize-link'))
+      .fail (res) ->
+        toast_fail(fail_msg)
+      .always ->
+        $($dragArea, 'img').removeClass(dragImgCssClass)
+        $photo.removeClass(dropCssClass)
+
+    photo_id = event.originalEvent.dataTransfer.getData(mimeType)
+    position = $photo.data('position')
+    if $photo.find('img').length == 0
+      apply_drop(album.add_photo(photo_id, position),
+        'Photo was added.', 'Photo was not able to add.')
+    else if confirm('Update this photo?')
+      apply_drop(album.update_photo(photo_id, position),
+        'Photo was updated.', 'Photo was not able to update.')
     event.preventDefault()
 
 $('#album-visibility').on 'switch-change', (e, data) ->
@@ -211,4 +243,4 @@ $('#load-photo-link').bind 'click', ->
     $link.hide() if data.page * 50 >= data.all_count
     SepiaUtil.apply_fancybox($('.display-link'))
 
-$("#album-visibility").bootstrapSwitch();
+$("#album-visibility").bootstrapSwitch()

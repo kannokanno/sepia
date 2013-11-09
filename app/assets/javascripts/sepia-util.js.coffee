@@ -19,7 +19,7 @@ class SepiaUtil
             $short.append('&hellip;')
           $full.slideToggle('middle')
 
-  @apply_fancybox: ($target) ->
-    $target.fancybox(type: 'image', speedIn: 800, speedOut: 200, titlePosition: 'inside', cyclic: true)
+  @apply_fancybox: ($target, options = {}) ->
+    $target.fancybox(_.extend(type: 'image', speedIn: 800, speedOut: 200, titlePosition: 'inside', cyclic: true, options))
 
 this.SepiaUtil = SepiaUtil

@@ -3,6 +3,7 @@ class CreateAlbumsPhotos < ActiveRecord::Migration
     create_table :albums_photos do |t|
       t.integer :album_id, null: false
       t.integer :photo_id, null: false
+      t.integer :position, null: false
       t.timestamps
     end
   end

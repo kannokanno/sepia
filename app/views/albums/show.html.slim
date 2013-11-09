@@ -2,59 +2,56 @@ ruby:
   own_album = current_user && @album.owner?(current_user)
   per_page = Settings.photos.per_page
   current_page = (params[:page].try(:to_i) || 1)
+  position = 1
 
 - if own_album
-  = link_to albums_path do
-    i.icon-arrow-left
-    | &nbsp; Back to album list
-h1
-  i.icon-film
-  | &nbsp;
-  = @album.name
-- if own_album
-  - if @album.public?
-    input#album-visibility.switch-small type="checkbox" data-on="success" data-off="warning" data-on-label="public" data-off-label="private" data-album-id="#{@album.id}" checked="checked"
-  - else
-    input#album-visibility.switch-small type="checkbox" data-on="success" data-off="warning" data-on-label="public" data-off-label="private" data-album-id="#{@album.id}"
+  #backpage
+    = link_to albums_path do
+      i.icon-arrow-left
+      | &nbsp; Back to album list
 
-#photos style="clear: both;" data-album-id=params[:id]
-  ul#polaroids
-    - @photos.each do |photo|
-        li
-          div class="polaroid frame-#{photo.provider}" data-original-title=format_time(photo.posted_at) data-content==""
-            i class="provider-icon #{icon_class(photo.provider)}"
-            = link_to 'javaScript:void(0)', :'data-album-id' => params[:id], :'data-photo-ids' => [photo.id], class: 'photo-trash' do
-              i.icon-trash.icon-large
-            = link_to photo.fullsize_url, class: "display-link", rel: 'photo-group', title: photo.message do
-              = lazy_image_tag(photo.thumbnail_url, class: 'img-photo', :'data-page' => 1)
-            .message
-              span.message-short == photo.message
-
-- if per_page * current_page < @all_count
-  div#more
-    = link_to 'Show more results', 'javaScript:void(0)', id: "load-photo-link", :'data-current-page' => "#{current_page}", :'data-url' => "#{album_path(id: params[:id], format: :json)}", class: "btn"
-
-script#photo-template type="text/template"
-  li
-    div class="polaroid frame-%{ provider }" data-original-title="%{ posted_at }" data-content=""
-      i class="provider-icon %{ icon_class }"
-      = link_to 'javaScript:void(0)', :'data-album-id' => "%{ album_id }", :'data-photo-ids' => "%{ photo_ids }", class: 'photo-trash' do
-        i.icon-trash.icon-large
-      = link_to '%{ fullsize_url }', class: "display-link", rel: 'photo-group', title: '%{ message }' do
-        = lazy_image_tag('%{ thumbnail_url }', class: 'img-photo', :'data-page' => '%{ page }')
-      .message
-        span.message-short = '%{ message }'
+#album-container
+  #cover
+  #gallery data-album-id=params[:id]
+    div
+      h3#album-title=@album.name
+      - if own_album
+        - if @album.public?
+          input#album-visibility.switch-small type="checkbox" data-on="success" data-off="warning" data-on-label="public" data-off-label="private" data-album-id="#{@album.id}" checked="checked"
+        - else
+          input#album-visibility.switch-small type="checkbox" data-on="success" data-off="warning" data-on-label="public" data-off-label="private" data-album-id="#{@album.id}"
+    - (1..40).each_slice(4) do |per_page|
+      .gallery-page
+        - per_page.each do |pos|
+          - photo = @album.find_by_position(pos)
+          - if photo.nil?
+            - if own_album
+              .empty-pocket.add-pocket.drop-area data-position=pos
+                span Add Photo
+            - else
+              .empty-pocket data-position=pos
+                span Empty
+          - else
+            .pocket.drop-area data-position=@album.position(photo)
+              = link_to photo.fullsize_url, class: "fullsize-link", rel: 'photo-group', title: photo.message do
+                = lazy_image_tag(photo.thumbnail_url, class: 'img-photo', :'data-page' => 1)
+              = link_to 'javaScript:void(0)', :'data-album-id' => params[:id], :'data-photo-ids' => [photo.id], class: 'photo-trash' do
+                i.icon-trash.icon-large
 
 - if own_album
-  div#toggle-candidate
-    i#toggle-candidate-icon.icon-double-angle-up.icon-3x
   #add-candidate data-url=photos_path(format: :json)
     #candidate-photos
       span#more-candidate
         = link_to 'more', 'javaScript:void(0)', id: "load-candidate-link", :'data-current-page' => 0, :'data-url' => "#{photos_path(format: :json)}", class: "btn"
 
+script#pocket-template type="text/template"
+  = link_to '%{ fullsize_url }', class: "fullsize-link", rel: 'photo-group', title: '%{ message }' do
+    = lazy_image_tag('%{ thumbnail_url }', class: 'img-photo')
+  = link_to 'javaScript:void(0)', :'data-album-id' => '%{ album_id }', :'data-photo-ids' => ['%{ photo_id }'], class: 'photo-trash' do
+    i.icon-trash.icon-large
+
 script#candidate-template type="text/template"
-  = lazy_image_tag('%{ thumbnail_url }', id: 'candidate-%{ id }', class: 'img-photo', :'data-photo-id' => '%{ id }', :'data-candidate-page' => '%{ page }')
+  = lazy_image_tag('%{ thumbnail_url }', id: 'candidate-%{ id }', class: 'img-photo', :'data-photo-id' => '%{ id }', :'data-img' => '%{ thumbnail_url }', :'data-candidate-page' => '%{ page }')
 
 = javascript_include_tag "albums"
 = javascript_include_tag "photos"

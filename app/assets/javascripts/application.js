@@ -13,6 +13,8 @@
 //= require jquery
 //= require jquery_ujs
 //= require jquery.mousewheel.min
+//= require jquery-ui-1.10.1.custom.min.js
+//= require jquery.easing.1.3.js
 //= require twitter/bootstrap
 //= require bootstrap-switch
 //= require jquery.unveil.min
@@ -25,6 +27,7 @@
 //= require jquery.fancybox-1.3.4
 //= require jquery.toast
 //= require bootstrap-typeahead.min.js
+//= require jquery.booklet.latest.min.js
 
 _.templateSettings = {
     evaluate:    /\%\{=(.+?)\}/g,

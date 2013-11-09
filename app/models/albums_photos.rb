@@ -6,6 +6,7 @@ class AlbumsPhotos < ActiveRecord::Base
   validates :album_id, presence: true
   validates :photo_id, presence: true
   validates :photo_id, uniqueness: { scope: :album_id, message: 'unique' }
+  validates :position, presence: true
   validate :check_user
 
   private
