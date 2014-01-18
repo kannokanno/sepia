@@ -8,7 +8,7 @@ errorAreaId = "#errors"
 $(galleryId).booklet(
   width: 1100,
   height: 460,
-  speed: 800,
+  speed: 600,
   autoCenter: true,
   manual: false,
   overlays: false,
