@@ -27,7 +27,7 @@
 //= require jquery.fancybox-1.3.4
 //= require jquery.toast
 //= require bootstrap-typeahead.min.js
-//= require jquery.booklet.latest.min.js
+//= require jquery.booklet.latest.js
 
 _.templateSettings = {
     evaluate:    /\%\{=(.+?)\}/g,

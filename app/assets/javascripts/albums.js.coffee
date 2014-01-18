@@ -8,8 +8,11 @@ errorAreaId = "#errors"
 $(galleryId).booklet(
   width: 1100,
   height: 460,
-  speed: 500,
+  speed: 800,
   autoCenter: true,
+  manual: false,
+  overlays: false,
+  hovers: false,
 )
 
 $(submitButtonId).bind 'click', (event) ->
