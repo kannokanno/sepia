@@ -157,7 +157,7 @@
 
     .b-wrap-right {
         @include page-shadow(left);
-        background-color: #fff !important;
+        background-color: rgb(238, 238, 238) !important;
 
         .gallery-page {
             padding-left: 25px;
